@@ -1,0 +1,51 @@
+#!/bin/bash
+## git-main - A script to checkout the default branch of a Git repository
+
+
+config_file="$HOME/.git-main"  # Name of the centralized config file
+
+
+# Function to read the default branch from the config file
+read_default_branch() {
+    local directory_path="$1"
+    local default_branch
+
+    # Check if the config file exists
+    if [ -f "$config_file" ]; then
+        default_branch=$(grep -w "$directory_path" "$config_file" | cut -d "=" -f 2)
+    fi
+
+    echo "$default_branch"
+}
+
+# Function to prompt the user for the default branch and update the config file
+update_default_branch() {
+    local directory_path="$1"
+
+    read -p "Enter the name of the default git branch for $directory_path: " default_branch
+    echo "$directory_path=$default_branch" >> "$config_file"
+    echo "wrote to $config_file"
+
+    # Set the default_branch variable
+    default_branch="$default_branch"
+}
+
+# Get the top-level directory of the Git repository
+directory_path=$(git rev-parse --show-toplevel 2>/dev/null)
+
+# Validate the directory path
+if [ -z "$directory_path" ]; then
+    echo "Error: Failed to retrieve the top-level directory of the Git repository."
+    exit 1
+fi
+
+# Read the default branch from the config file
+default_branch=$(read_default_branch "$directory_path")
+
+# Prompt user for the default branch if not found in the config file
+if [ -z "$default_branch" ]; then
+    update_default_branch "$directory_path"
+fi
+
+# Checkout the default branch
+git checkout "$default_branch"
